@@ -1,0 +1,128 @@
+/* BENEFÍCIOS */
+body {
+    background: linear-gradient(135deg, #0f172a, #111827);
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+}
+.beneficios{
+    padding: 140px 8%;
+
+    text-align: center;
+}
+
+.beneficios span{
+    color: #06b6d4;
+
+    letter-spacing: 2px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+.beneficios h2{
+    font-size: 52px;
+
+    margin: 20px 0 70px;
+}
+
+.beneficios-grid{
+    display: grid;
+
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+
+    gap: 25px;
+}
+
+.beneficio-item{
+    background: rgba(255,255,255,0.04);
+
+    border: 1px solid rgba(255,255,255,0.08);
+
+    padding: 28px;
+
+    border-radius: 20px;
+
+    text-align: left;
+
+    color: #e4e4e7;
+
+    line-height: 1.7;
+
+    backdrop-filter: blur(10px);
+
+    transition: 0.3s;
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+/* glow */
+
+.beneficio-item::before{
+    content: "";
+
+    position: absolute;
+
+    width: 180px;
+    height: 180px;
+
+    background: rgba(6,182,212,0.12);
+
+    border-radius: 50%;
+
+    top: -80px;
+    right: -80px;
+
+    filter: blur(50px);
+}
+
+.beneficio-item:hover{
+    transform: translateY(-8px);
+
+    border-color: #06b6d4;
+}
+
+.beneficio-item h1, {
+    font-size: 24px;
+
+    margin-bottom: 20px;
+}
+.beneficio-item h2{
+    font-size: 20px;
+
+    margin-bottom: 20px;
+}
+.beneficio-item .link {
+    font-size: 26px;
+
+    color: #d1d5db;
+}
+
+.beneficio-item a {
+    display: inline-block;
+
+    margin-top: 20px;
+
+    color: #e8f0f1;
+
+    text-decoration: none;
+
+  font-size: 26px;
+
+    font-weight: 600;
+
+    transition: color 0.3s;
+}
+
+.pezinho {
+    margin-top: 80px;
+
+    text-align: center;
+
+    color: #a1a1aa;
+    font-size: 18px;
+}
