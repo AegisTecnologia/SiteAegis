@@ -50,8 +50,7 @@ body {
 
     border-radius: 20px;
 
-    text-align: left;
-
+   text-align: center;
     color: #e4e4e7;
 
     line-height: 1.7;
@@ -137,6 +136,7 @@ body {
     justify-content: center; /* centraliza os cards */
     gap: 20px; /* espaço entre eles */
     flex-wrap: wrap; /* quebra linha quando não couber */
+     text-align: center;
 }
 
 .card {
@@ -146,4 +146,7 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
      display: flex;
      text-align: center;
+    flex-direction: column;
+    align-items: center;
+    
 }
