@@ -7,11 +7,14 @@ body {
     font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
+
 }
 .beneficios{
     padding: 140px 8%;
 
     text-align: center;
+    display: flex;
+    flex-direction: column;
 }
 
 .beneficios span{
