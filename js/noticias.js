@@ -1,7 +1,7 @@
 const listaNoticias = document.getElementById("listaNoticias");
 
 
-fetch("https://github.com/isabellamahfud/aegisTecnologia/blob/main/noticias.json")
+fetch("../noticias.json")
 .then(resposta => resposta.json())
 .then(noticias => {
 
