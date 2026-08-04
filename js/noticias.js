@@ -1,3 +1,5 @@
+console.log("NOVO NOTICIAS JS CARREGADO");
+
 fetch("https://isabellamahfud.github.io/aegisTecnologia/noticias.json")
 .then(response => response.json())
 .then(data => {
