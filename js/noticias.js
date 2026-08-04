@@ -1,44 +1,34 @@
-const listaNoticias = document.getElementById("listaNoticias");
+fetch("https://isabellamahfud.github.io/aegisTecnologia/noticias.json")
+.then(response => response.json())
+.then(data => {
 
+    console.log("NOTÍCIAS:", data);
 
-fetch("../noticias.json")
-.then(resposta => resposta.json())
-.then(noticias => {
+    const lista = document.getElementById("listaNoticias");
 
+    data.forEach(noticia => {
 
-    noticias.forEach(noticia => {
-
-
-        listaNoticias.innerHTML += `
-
+        lista.innerHTML += `
+        
         <div class="card">
 
-            <h2>
-                ${noticia.titulo}
-            </h2>
+            <h2>${noticia.titulo}</h2>
 
-            <p>
-                ${noticia.conteudo}
-            </p>
+            <p>${noticia.conteudo}</p>
 
-            <span>
+            <small>
                 ${new Date(noticia.data).toLocaleDateString("pt-BR")}
-            </span>
+            </small>
 
         </div>
 
         `;
 
-
     });
 
-
 })
-.catch(erro => {
+.catch(error => {
 
-    console.error(
-        "Erro carregando notícias:",
-        erro
-    );
+    console.error("Erro carregando notícias:", error);
 
 });
