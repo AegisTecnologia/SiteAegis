@@ -151,7 +151,6 @@ gap:20px;
 
 .card {
 
-width:320px;
 
 background:rgba(113, 112, 180, 0.575);
 
@@ -175,4 +174,23 @@ font-size:20px;
 
 line-height:1.6;
 
+}
+
+.guia {
+    margin-top: 40px;
+    text-align: center;
+    text-decoration: none;
+    width: 100%;
+
+}
+
+.guia p {
+    font-size: 20px;
+    color: #d1d5db;
+}
+
+.guia a {
+    color: #eff8fa;
+    text-decoration: none;
+    font-weight: bold;
 }
