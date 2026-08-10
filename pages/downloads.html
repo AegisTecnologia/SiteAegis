@@ -36,7 +36,12 @@
 </script>
 
 
-<body>
+<body style="opacity:0; transition: opacity 0.25s ease;">
+
+    <noscript>
+        <style>body { opacity: 1 !important; }</style>
+        <p style="padding: 16px; background: #fff3cd; color: #856404; border: 1px solid #ffeeba;">Este site requer JavaScript para verificar o acesso restrito.</p>
+    </noscript>
 
     <a href="../index.html" class="back-home">
         <img src="../img/aegisTecnologiaLogo.png" alt="Aegis Tecnologia">
@@ -205,31 +210,21 @@
     
 
     <script type="module">
-
         import { requireDownloadAccess } from '../js/firebase-auth.js';
 
-
-
         (async () => {
-
             try {
-
                 const proceed = await requireDownloadAccess();
-
                 if (!proceed) {
-
                     document.body.style.display = 'none';
-
+                    return;
                 }
-
+                document.body.style.opacity = '1';
             } catch (error) {
-
                 console.error('Erro ao verificar acesso:', error);
-
+                document.body.style.display = 'none';
             }
-
         })();
-
     </script>
 
 </body>
