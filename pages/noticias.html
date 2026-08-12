@@ -58,8 +58,11 @@
 
 
     </section>
+
 <!-- Widget Direct do Firebase (Redimensionamento Automático com/sem Imagem) -->
-<div id="noticias-aegis-container" style="max-width: 900px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif; transition: all 0.3s ease;">
+<div id="noticias-aegis-container" style="max-width: 450px;   display: flex;
+  flex-wrap: wrap; /* Faz os widgets caírem para a linha de baixo se faltar espaço */
+  gap: 16px;       /* Espaço entre os widgets */margin: 0 auto; font-family: system-ui, -apple-system, sans-serif; transition: all 0.3s ease;">
   <p style="text-align: center; color: #64748b; padding: 20px;">Carregando notícias em tempo real...</p>
 </div>
 
@@ -145,7 +148,7 @@ async function loadAegisNews() {
       const hasImage = art.coverImage && art.coverImage.trim().length > 5;
       const imgHtml = hasImage 
         ? `<div style="margin-bottom:14px; overflow:hidden; border-radius:8px; background:#f1f5f9;">
-             <img src="${art.coverImage}" alt="${art.title}" onerror="this.parentElement.style.display='none';" style="width:100%; max-height:300px; object-fit:cover; display:block; border-radius:8px;" />
+             <img src="${art.coverImage}" alt="${art.title}" onerror="this.parentElement.style.display='none';" style="width:50%; max-height:300px; object-fit:cover; display:block; border-radius:8px;" />
            </div>` 
         : '';
 
@@ -153,7 +156,7 @@ async function loadAegisNews() {
         <article style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease-in-out;">
           <div>
             ${imgHtml}
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; flex-wrap: wrap;; gap:8px; margin-bottom:10px;">
               <span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; text-transform:uppercase;">${art.category || 'Geral'}</span>
               <small style="color:#94a3b8; font-size:12px;">${art.publishedAt ? new Date(art.publishedAt).toLocaleDateString('pt-BR') : ''}</small>
             </div>
