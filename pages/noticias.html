@@ -1,3 +1,4 @@
+// ...existing code...
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,65 +6,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notícias e Novidades</title>
     <link rel="stylesheet" href="../css/noticias.css">
+    <style>
+      /* Grid: widgets lado a lado com quebra automática */
+      #noticias-aegis-container.noticias-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: center;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 16px;
+        box-sizing: border-box;
+        font-family: system-ui, -apple-system, sans-serif;
+        transition: all 0.3s ease;
+      }
+      /* Cada widget ocupa metade do espaço (2 por linha) e é responsivo */
+      #noticias-aegis-container.noticias-grid article {
+        flex: 0 0 calc(50% - 16px);
+        max-width: calc(50% - 16px);
+        box-sizing: border-box;
+      }
+      /* Força imagens a ocupar o espaço do card */
+      #noticias-aegis-container.noticias-grid article img {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 300px;
+        object-fit: cover !important;
+        display: block;
+        border-radius: 8px;
+      }
+      @media (max-width: 720px) {
+        #noticias-aegis-container.noticias-grid article {
+          flex: 0 0 100%;
+          max-width: 100%;
+        }
+      }
+      @media print {
+        #noticias-aegis-container.noticias-grid article {
+          page-break-inside: avoid;
+          break-inside: avoid;
+          page-break-after: always;
+        }
+      }
+    </style>
 </head>
 <body>
-
 
     <a href="../index.html" class="back-home">
         <img src="../img/aegisTecnologiaLogo.png" alt="Aegis Tecnologia">
     </a>
 
-
-
-
-
     <section id="beneficios" class="pagina beneficios">
-
-
-    <span>
-
-
-      
-      NOTÍCIAS E NOVIDADES
-
-
-    </span>
-
-
-
-
-
-    <h2>
-
-
-        Confira as novidades!
-
-
-    </h2>
-
-    <div class="guia">
+      <span>NOTÍCIAS E NOVIDADES</span>
+      <h2>Confira as novidades!</h2>
+      <div class="guia">
         <p class="link">Acesse aqui o <a href="https://isabellamahfud.github.io/aegisGuia/">Guia de reforma</a></p>
-
-
-        </div>
-
-
-
-
-
-
-
-
-  
-
-
+      </div>
     </section>
 
-<!-- Widget Direct do Firebase (Redimensionamento Automático com/sem Imagem) -->
-<div id="noticias-aegis-container" style="max-width: 450px;   display: flex;
-  flex-wrap: wrap; /* Faz os widgets caírem para a linha de baixo se faltar espaço */
-  gap: 16px;       /* Espaço entre os widgets */margin: 0 auto; font-family: system-ui, -apple-system, sans-serif; transition: all 0.3s ease;">
-  <p style="text-align: center; color: #64748b; padding: 20px;">Carregando notícias em tempo real...</p>
+<div id="noticias-aegis-container" class="noticias-grid">
+  <p style="text-align:center; color:#64748b; padding:20px; width:100%;">Carregando notícias em tempo real...</p>
 </div>
 
 <script type="module">
@@ -148,7 +150,7 @@ async function loadAegisNews() {
       const hasImage = art.coverImage && art.coverImage.trim().length > 5;
       const imgHtml = hasImage 
         ? `<div style="margin-bottom:14px; overflow:hidden; border-radius:8px; background:#f1f5f9;">
-             <img src="${art.coverImage}" alt="${art.title}" onerror="this.parentElement.style.display='none';" style="width:50%; max-height:300px; object-fit:cover; display:block; border-radius:8px;" />
+             <img src="${art.coverImage}" alt="${art.title}" onerror="this.parentElement.style.display='none';" style="width:100%; max-height:300px; object-fit:cover; display:block; border-radius:8px;" />
            </div>` 
         : '';
 
@@ -156,7 +158,7 @@ async function loadAegisNews() {
         <article style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease-in-out;">
           <div>
             ${imgHtml}
-            <div style="display:flex; align-items:center; flex-wrap: wrap;; gap:8px; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; flex-wrap: wrap; gap:8px; margin-bottom:10px;">
               <span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; text-transform:uppercase;">${art.category || 'Geral'}</span>
               <small style="color:#94a3b8; font-size:12px;">${art.publishedAt ? new Date(art.publishedAt).toLocaleDateString('pt-BR') : ''}</small>
             </div>
@@ -176,11 +178,11 @@ async function loadAegisNews() {
 
 loadAegisNews();
 </script>
+
 <script src="../js/noticias.js"></script>
-    <script type="module" src="../js/supabase-auth.js"></script>
-
-
-    <script src="../js/header.js"></script>
+<script type="module" src="../js/supabase-auth.js"></script>
+<script src="../js/header.js"></script>
 
 </body>
 </html>
+// ...existing code...

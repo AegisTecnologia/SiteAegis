@@ -194,3 +194,42 @@ line-height:1.6;
     text-decoration: none;
     font-weight: bold;
 }
+
++     /* Grid: widgets lado a lado com quebra automática */
++     #noticias-aegis-container.noticias-grid {
++       display: flex;
++       flex-wrap: wrap;
++       gap: 16px;
++       justify-content: center;
++       max-width: 1100px;
++       margin: 0 auto;
++     }
++     /* Cada widget ocupa metade do espaço (2 por linha) e é responsivo */
++     #noticias-aegis-container.noticias-grid article {
++       flex: 0 0 calc(50% - 16px);
++       max-width: calc(50% - 16px);
++       box-sizing: border-box;
++     }
++     /* Força imagens a ocupar o espaço do card em vez de 50% (sobrepõe estilos inline) */
++     #noticias-aegis-container.noticias-grid article img {
++       width: 100% !important;
++       height: auto !important;
++       max-height: 300px;
++       object-fit: cover !important;
++       display: block;
++     }
++     /* Quebra para telas menores: 1 por linha */
++     @media (max-width: 720px) {
++       #noticias-aegis-container.noticias-grid article {
++         flex: 0 0 100%;
++         max-width: 100%;
++       }
++     }
++     /* Impressão: evita quebrar um card no meio e permite quebra de página entre cards */
++     @media print {
++       #noticias-aegis-container.noticias-grid article {
++         page-break-inside: avoid;
++         break-inside: avoid;
++         page-break-after: always;
++       }
++     }
