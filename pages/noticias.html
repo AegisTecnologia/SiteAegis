@@ -58,8 +58,8 @@
 
 
     </section>
-<!-- Widget de Notícias Aegis (Carregamento Direto Multibanco) -->
-<div id="noticias-aegis-container" style="max-width: 900px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif;">
+<!-- Widget Direct do Firebase (Redimensionamento Automático com/sem Imagem) -->
+<div id="noticias-aegis-container" style="max-width: 900px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif; transition: all 0.3s ease;">
   <p style="text-align: center; color: #64748b; padding: 20px;">Carregando notícias em tempo real...</p>
 </div>
 
@@ -84,7 +84,6 @@ async function loadAegisNews() {
     const app = initializeApp(firebaseConfig);
     const articlesMap = new Map();
 
-    // Tenta buscar no banco de dados do CMS e no banco padrão
     const dbIds = ["ai-studio-cmsdenotcias-2778bd05-0a56-4171-8d18-45821a3f8331", "(default)"];
     
     for (const dbId of dbIds) {
@@ -100,7 +99,6 @@ async function loadAegisNews() {
       }
     }
 
-    // Fallback REST API
     if (articlesMap.size === 0) {
       for (const dbId of dbIds) {
         try {
@@ -133,7 +131,6 @@ async function loadAegisNews() {
 
     const allArticles = Array.from(articlesMap.values());
     
-    // Filtra artigos publicados e ordena por data
     const published = allArticles
       .filter(a => a.status === 'published' || !a.status)
       .sort((a, b) => new Date(b.publishedAt || b.createdAt || 0) - new Date(a.publishedAt || a.createdAt || 0));
@@ -143,18 +140,30 @@ async function loadAegisNews() {
       return;
     }
 
-    container.innerHTML = published.map(art => `
-      <article style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-        ${art.coverImage ? `<img src="${art.coverImage}" alt="${art.title}" style="width:100%; max-height:280px; object-fit:cover; border-radius:8px; margin-bottom:14px;" />` : ''}
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-          <span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; text-transform:uppercase;">${art.category || 'Geral'}</span>
-          <small style="color:#94a3b8; font-size:12px;">${art.publishedAt ? new Date(art.publishedAt).toLocaleDateString('pt-BR') : ''}</small>
-        </div>
-        <h3 style="font-size:20px; color:#0f172a; margin:0 0 6px 0; font-weight:700; line-height:1.3;">${art.title}</h3>
-        ${art.subtitle ? `<p style="font-size:14px; color:#475569; margin:0 0 12px 0; line-height:1.5;">${art.subtitle}</p>` : ''}
-        ${art.body ? `<div style="font-size:14px; color:#334155; line-height:1.6; margin-top:10px;">${art.body}</div>` : ''}
-      </article>
-    `).join('');
+    // Renderiza cada card ajustando altura dinamicamente (com ou sem imagem)
+    container.innerHTML = published.map(art => {
+      const hasImage = art.coverImage && art.coverImage.trim().length > 5;
+      const imgHtml = hasImage 
+        ? `<div style="margin-bottom:14px; overflow:hidden; border-radius:8px; background:#f1f5f9;">
+             <img src="${art.coverImage}" alt="${art.title}" onerror="this.parentElement.style.display='none';" style="width:100%; max-height:300px; object-fit:cover; display:block; border-radius:8px;" />
+           </div>` 
+        : '';
+
+      return `
+        <article style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease-in-out;">
+          <div>
+            ${imgHtml}
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
+              <span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; text-transform:uppercase;">${art.category || 'Geral'}</span>
+              <small style="color:#94a3b8; font-size:12px;">${art.publishedAt ? new Date(art.publishedAt).toLocaleDateString('pt-BR') : ''}</small>
+            </div>
+            <h3 style="font-size:20px; color:#0f172a; margin:0 0 8px 0; font-weight:700; line-height:1.35;">${art.title}</h3>
+            ${art.subtitle ? `<p style="font-size:14px; color:#475569; margin:0 0 12px 0; line-height:1.5; font-weight:500;">${art.subtitle}</p>` : ''}
+            ${art.body ? `<div style="font-size:14px; color:#334155; line-height:1.6; margin-top:8px;">${art.body}</div>` : ''}
+          </div>
+        </article>
+      `;
+    }).join('');
 
   } catch (err) {
     console.error("Erro geral ao carregar notícias:", err);
