@@ -152,16 +152,16 @@ async function loadAegisNews() {
         : '';
 
       return `
-        <article style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease-in-out;">
+        <article style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:12px; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease-in-out;">
           <div>
             ${imgHtml}
-            <div style="display:flex; align-items:center; flex-wrap: wrap; gap:8px; margin-bottom:10px;">
-              <span style="background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; text-transform:uppercase;">${art.category || 'Geral'}</span>
-              <small style="color:#94a3b8; font-size:12px;">${art.publishedAt ? new Date(art.publishedAt).toLocaleDateString('pt-BR') : ''}</small>
+            <div style="display:flex; align-items:center; flex-wrap: wrap; gap:6px; margin-bottom:6px;">
+              <span style="background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase;">${art.category || 'Geral'}</span>
+              <small style="color:#94a3b8; font-size:11px;">${art.publishedAt ? new Date(art.publishedAt).toLocaleDateString('pt-BR') : ''}</small>
             </div>
-            <h3 style="font-size:20px; color:#0f172a; margin:0 0 8px 0; font-weight:700; line-height:1.35;">${art.title}</h3>
-            ${art.subtitle ? `<p style="font-size:14px; color:#475569; margin:0 0 12px 0; line-height:1.5; font-weight:500;">${art.subtitle}</p>` : ''}
-            ${art.body ? `<div style="font-size:14px; color:#334155; line-height:1.6; margin-top:8px;">${art.body}</div>` : ''}
+            <h3 style="font-size:16px; color:#0f172a; margin:0 0 6px 0; font-weight:700; line-height:1.3;">${art.title}</h3>
+            ${art.subtitle ? `<p style="font-size:13px; color:#475569; margin:0 0 8px 0; line-height:1.4; font-weight:500;">${art.subtitle}</p>` : ''}
+            ${art.body ? `<div style="font-size:13px; color:#334155; line-height:1.5; margin-top:6px;">${art.body}</div>` : ''}
           </div>
         </article>
       `;
