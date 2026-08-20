@@ -9,8 +9,8 @@
     <style>
       /* Grid: widgets lado a lado com quebra automática */
       #noticias-aegis-container.noticias-grid {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 16px;
         justify-content: center;
         max-width: 1100px;
@@ -22,8 +22,8 @@
       }
       /* Cada widget ocupa metade do espaço (2 por linha) e é responsivo */
       #noticias-aegis-container.noticias-grid article {
-        flex: 0 0 calc(50% - 16px);
-        max-width: calc(50% - 16px);
+        width: 100%;
+        max-width: 100%;
         box-sizing: border-box;
       }
       /* Força imagens a ocupar o espaço do card */
@@ -70,8 +70,8 @@
       <h2>Confira as novidades!</h2>
     </section>
 <!-- Widget Direct do Firebase (Com Imagem, Largura: 380px) -->
-<div id="noticias-aegis-container" style="max-width: 380px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif; transition: all 0.3s ease;">
-  <p style="text-align: center; color: #64748b; padding: 20px;">Carregando notícias em tempo real...</p>
+<div id="noticias-aegis-container" class="noticias-grid" style="max-width: 980px; margin: 0 auto; font-family: system-ui, -apple-system, sans-serif; transition: all 0.3s ease;">
+  <p style="text-align: center; color: #64748b; padding: 20px; grid-column: 1 / -1;">Carregando notícias em tempo real...</p>
 </div>
 
 <script type="module">
@@ -181,7 +181,7 @@ async function loadAegisNews() {
         : '';
 
       return `
-        <article style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:14px; box-shadow:0 2px 6px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease-in-out;">
+        <article style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin:0; box-shadow:0 2px 6px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease-in-out;">
           <div>
             ${imgHtml}
             <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:8px;">
