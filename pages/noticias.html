@@ -147,7 +147,7 @@ async function loadAegisNews() {
     const published = allArticles
       .filter(a => a.status === 'published' || !a.status)
       .sort((a, b) => new Date(b.publishedAt || b.createdAt || 0) - new Date(a.publishedAt || a.createdAt || 0))
-      .slice(0, 5);
+      .slice(0, 10);
 
     if (published.length === 0) {
       container.innerHTML = '<p style="text-align:center; color:#64748b; padding:20px;">Nenhuma notícia publicada no momento.</p>';
