@@ -9,12 +9,16 @@
 <body>
     <h1>Mercadorias</h1>
     <!-- Embed Aegis Tecnologia Live Documentation -->
-<iframe 
-  src="https://aegisdocumentos.ai.studio" 
-  width="100%" 
-  height="900" 
-  frameborder="0"
-  style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"
-></iframe>
+<!-- 1. Crie o elemento onde os cards serão renderizados -->
+<div id="livecard-feed"></div>
+
+<!-- 2. Adicione a tag de script ultraleve do LiveCard -->
+<script 
+  src="https://livecard-hub.ai.studio/embed/livecard.js" 
+  data-container="#livecard-feed"
+  data-theme="modern"
+  data-limit="6"
+  async>
+</script>
 </body>
 </html>
