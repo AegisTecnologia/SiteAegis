@@ -1,0 +1,16 @@
+/* BENEFÍCIOS */
+body {
+    background: linear-gradient(135deg, #0f172a, #111827);
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+
+}
+h1 {
+    font-size: 36px;
+    margin-bottom: 20px;
+    text-align: center;
+}
