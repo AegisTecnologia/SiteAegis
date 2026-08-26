@@ -12,14 +12,7 @@ const OWNER_UIDS = [
 ];
 // ...existing code...
 
-export async function requireDownloadAccess() {
-  const user = await getCurrentFirebaseUser();
 
-  if (!user) {
-    alert('Faça login para solicitar acesso aos downloads.');
-    window.location.href = getSiteUrl('pages/login.html');
-    return false;
-  }
 
   const authorized = await isDownloadsAuthorized(user);
 
