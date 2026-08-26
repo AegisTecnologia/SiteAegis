@@ -17,8 +17,7 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp,
-  arrayUnion
+  serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
 import { app } from './firebase-config.js';
@@ -26,22 +25,22 @@ import { app } from './firebase-config.js';
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+
+// =====================================================
+// PROPRIETÁRIOS DO SITE
+// =====================================================
+
 const OWNER_UIDS = [
   'nXA3dDI9J3emisozEjxwwEgVvw33',
   'Cu9C6CYcd7SDigdhWlrIdVPqgWG3'
 ];
 
-function getSiteBasePath() {
-  const path = window.location.pathname;
-  return path.replace(/\/pages\/.*$/, '').replace(/\/[^/]+\.html$/, '') || '';
-}
 
-function getSiteUrl(relativePath) {
-  const cleanPath = relativePath.replace(/^\/+/, '');
-  return `${window.location.origin}${getSiteBasePath()}/${cleanPath}`;
-}
+// =====================================================
+// USUÁRIO ATUAL
+// =====================================================
 
-function getCurrentFirebaseUser() {
+async function getCurrentFirebaseUser() {
   return new Promise((resolve) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       unsubscribe();
@@ -50,174 +49,652 @@ function getCurrentFirebaseUser() {
   });
 }
 
+
+// =====================================================
+// CAMINHOS DO SITE
+// =====================================================
+
+function getSiteBasePath() {
+  const path = window.location.pathname;
+
+  let base = path
+    .replace(/\/pages\/.*$/, '')
+    .replace(/\/[^/]*\.html.*$/, '');
+
+  return base === '' ? '/' : base;
+}
+
+
+function getSiteUrl(relativePath) {
+  const base = getSiteBasePath().replace(/\/$/, '');
+  const cleanPath = relativePath.replace(/^\//, '');
+
+  return window.location.origin + base + '/' + cleanPath;
+}
+
+
+function redirectToIndex() {
+  window.location.href = getSiteUrl('index.html');
+}
+
+
+// =====================================================
+// PERMISSÕES DE DOWNLOAD
+// =====================================================
+
 async function isDownloadsAuthorized(user) {
-  if (!user) return false;
-
-  const permission = await getDoc(doc(db, 'permissions', 'downloads'));
-
-  if (!permission.exists()) return false;
-
-  const allowedUids = permission.data().allowedUids || [];
-  return allowedUids.includes(user.uid);
-}
-
-async function hasPendingRequest(user) {
-  const requestQuery = query(
-    collection(db, 'permission_requests'),
-    where('uid', '==', user.uid),
-    where('status', '==', 'pending')
-  );
-
-  const snapshot = await getDocs(requestQuery);
-  return !snapshot.empty;
-}
-
-async function createPermissionRequest(user) {
-  await addDoc(collection(db, 'permission_requests'), {
-    uid: user.uid,
-    email: user.email,
-    displayName: user.displayName || '',
-    status: 'pending',
-    createdAt: serverTimestamp()
-  });
-}
-
-export async function requireDownloadAccess() {
-  const user = await getCurrentFirebaseUser();
-
   if (!user) {
-    window.location.href = getSiteUrl('pages/login.html');
     return false;
   }
 
-  if (await isDownloadsAuthorized(user)) {
+  try {
+    const permissionDoc = await getDoc(
+      doc(db, 'permissions', 'downloads')
+    );
+
+    if (!permissionDoc.exists()) {
+      return false;
+    }
+
+    const data = permissionDoc.data();
+
+    return (
+      Array.isArray(data.allowedUids) &&
+      data.allowedUids.includes(user.uid)
+    );
+
+  } catch (err) {
+    console.error(
+      'Erro ao verificar permissão de downloads:',
+      err
+    );
+
+    return false;
+  }
+}
+
+
+async function hasPendingRequest(user) {
+  try {
+    const q = query(
+      collection(db, 'permission_requests'),
+      where('uid', '==', user.uid),
+      where('status', '==', 'pending')
+    );
+
+    const snap = await getDocs(q);
+
+    return !snap.empty;
+
+  } catch (err) {
+    console.error(
+      'Erro ao checar solicitações pendentes:',
+      err
+    );
+
+    return false;
+  }
+}
+
+
+async function createPermissionRequest(user) {
+  try {
+    const request = {
+      uid: user.uid,
+      email: user.email || null,
+      displayName: user.displayName || null,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    };
+
+    await addDoc(
+      collection(db, 'permission_requests'),
+      request
+    );
+
+    return true;
+
+  } catch (err) {
+    console.error(
+      'Erro ao criar solicitação de permissão:',
+      err
+    );
+
+    return false;
+  }
+}
+
+
+// =====================================================
+// PROTEGER DOWNLOADS
+// =====================================================
+
+export async function requireDownloadAccess() {
+
+  const user = await getCurrentFirebaseUser();
+
+  if (!user) {
+
+    alert(
+      'Faça login para solicitar acesso aos downloads.'
+    );
+
+    window.location.href = getSiteUrl(
+      'pages/login.html'
+    );
+
+    return false;
+  }
+
+
+  const authorized = await isDownloadsAuthorized(user);
+
+  if (authorized) {
     return true;
   }
 
-  if (!(await hasPendingRequest(user))) {
+
+  const pending = await hasPendingRequest(user);
+
+  if (!pending) {
     await createPermissionRequest(user);
   }
 
-  alert('Acesso aos downloads ainda não aprovado.');
+
+  alert(
+    'Você ainda não tem permissão. Solicitação enviada ao administrador.'
+  );
+
   window.location.href = getSiteUrl('index.html');
+
   return false;
 }
 
-function showMessage(form, message, success = false) {
-  let element = form.querySelector('.form-message');
 
-  if (!element) {
-    element = document.createElement('p');
-    element.className = 'form-message';
-    form.prepend(element);
+// =====================================================
+// MENSAGENS DOS FORMULÁRIOS
+// =====================================================
+
+function createMessageElement(form) {
+
+  let msgEl = form.querySelector('#form-message');
+
+  if (!msgEl) {
+
+    msgEl = document.createElement('div');
+
+    msgEl.className = 'message';
+
+    msgEl.id = 'form-message';
+
+    msgEl.setAttribute(
+      'aria-live',
+      'polite'
+    );
+
+    form.insertBefore(
+      msgEl,
+      form.firstChild
+    );
   }
 
-  element.textContent = message;
-  element.style.color = success ? 'green' : 'red';
+  return msgEl;
 }
 
-const signupForm = document.getElementById('signup-form');
+
+function showMessage(
+  el,
+  msg,
+  success = true
+) {
+
+  if (!el) {
+    return;
+  }
+
+  el.textContent = msg;
+
+  el.style.color = success
+    ? 'green'
+    : 'red';
+}
+
+
+// =====================================================
+// CADASTRO
+// =====================================================
+
+const signupForm =
+  document.getElementById('signup-form');
+
 
 if (signupForm) {
-  signupForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
 
-    const name = document.getElementById('signup-name')?.value.trim() || '';
-    const email = document.getElementById('signup-email').value.trim().toLowerCase();
-    const password = document.getElementById('signup-password').value;
-    const confirmation = document.getElementById('signup-password-confirm').value;
+  signupForm.addEventListener(
+    'submit',
+    async (e) => {
 
-    if (password !== confirmation) {
-      showMessage(signupForm, 'As senhas não conferem.');
-      return;
-    }
+      e.preventDefault();
 
-    try {
-      const approval = await getDoc(doc(db, 'preapproved_users', email));
 
-      if (!approval.exists() || approval.data().status !== 'approved') {
+      const name =
+        document
+          .getElementById('signup-name')
+          .value
+          .trim();
+
+
+      const email =
+        document
+          .getElementById('signup-email')
+          .value
+          .trim();
+
+
+      const password =
+        document
+          .getElementById('signup-password')
+          .value;
+
+
+      const confirm =
+        document
+          .getElementById('signup-password-confirm')
+          .value;
+
+
+      const msgEl =
+        createMessageElement(signupForm);
+
+
+      // ---------------------------------------------
+      // CONFIRMAR SENHA
+      // ---------------------------------------------
+
+      if (password !== confirm) {
+
         showMessage(
-          signupForm,
-          'Seu e-mail ainda não foi aprovado pelo administrador.'
+          msgEl,
+          'As senhas não conferem.',
+          false
         );
+
         return;
       }
 
-      const credential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
 
-      if (name) {
-        await updateProfile(credential.user, {
-          displayName: name
-        });
+      try {
+
+        // -------------------------------------------
+        // VERIFICAR APROVAÇÃO
+        // -------------------------------------------
+
+        const emailKey =
+          email.toLowerCase().trim();
+
+
+        const approvalDoc =
+          await getDoc(
+            doc(
+              db,
+              'preapproved_users',
+              emailKey
+            )
+          );
+
+
+        if (
+          !approvalDoc.exists() ||
+          approvalDoc.data().status !== 'approved'
+        ) {
+
+          showMessage(
+            msgEl,
+            'Seu cadastro ainda não foi aprovado por um administrador.',
+            false
+          );
+
+          return;
+        }
+
+
+        // -------------------------------------------
+        // CRIAR USUÁRIO
+        // -------------------------------------------
+
+        const userCredential =
+          await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+
+
+        // -------------------------------------------
+        // SALVAR NOME
+        // -------------------------------------------
+
+        if (name) {
+
+          await updateProfile(
+            userCredential.user,
+            {
+              displayName: name
+            }
+          );
+        }
+
+
+        // -------------------------------------------
+        // SALVAR USUÁRIO NO FIRESTORE
+        // -------------------------------------------
+
+        await setDoc(
+          doc(
+            db,
+            'users',
+            userCredential.user.uid
+          ),
+          {
+            uid: userCredential.user.uid,
+            email: emailKey,
+            displayName: name,
+            createdAt: serverTimestamp()
+          }
+        );
+
+
+        // -------------------------------------------
+        // SUCESSO
+        // -------------------------------------------
+
+        showMessage(
+          msgEl,
+          'Cadastro realizado com sucesso. Redirecionando...',
+          true
+        );
+
+
+        setTimeout(
+          () => {
+            redirectToIndex();
+          },
+          1200
+        );
+
+
+      } catch (err) {
+
+        console.error(
+          'Erro no cadastro:',
+          err
+        );
+
+
+        showMessage(
+          msgEl,
+          err.message || 'Erro no cadastro.',
+          false
+        );
       }
 
-      await setDoc(doc(db, 'users', credential.user.uid), {
-        uid: credential.user.uid,
-        email,
-        displayName: name,
-        createdAt: serverTimestamp()
-      });
-
-      showMessage(signupForm, 'Cadastro realizado com sucesso.', true);
-
-      setTimeout(() => {
-        window.location.href = getSiteUrl('index.html');
-      }, 800);
-    } catch (error) {
-      console.error(error);
-      showMessage(signupForm, 'Erro ao realizar cadastro.');
     }
-  });
+  );
 }
 
-const loginForm = document.getElementById('login-form');
+
+// =====================================================
+// LOGIN
+// =====================================================
+
+const loginForm =
+  document.getElementById('login-form');
+
 
 if (loginForm) {
-  loginForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
 
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
+  loginForm.addEventListener(
+    'submit',
+    async (e) => {
 
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
+      e.preventDefault();
 
-      window.location.href = getSiteUrl('index.html');
-    } catch (error) {
-      console.error(error);
-      showMessage(loginForm, 'E-mail ou senha inválidos.');
+
+      const email =
+        document
+          .getElementById('login-email')
+          .value
+          .trim();
+
+
+      const password =
+        document
+          .getElementById('login-password')
+          .value;
+
+
+      const msgEl =
+        createMessageElement(loginForm);
+
+
+      try {
+
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+
+        showMessage(
+          msgEl,
+          'Login efetuado. Redirecionando...',
+          true
+        );
+
+
+        setTimeout(
+          () => {
+            redirectToIndex();
+          },
+          800
+        );
+
+
+      } catch (err) {
+
+        console.error(
+          'Erro no login:',
+          err
+        );
+
+
+        showMessage(
+          msgEl,
+          err.message || 'Erro no login.',
+          false
+        );
+      }
+
     }
+  );
+}
+
+
+// =====================================================
+// PROTEGER LINK DE DOWNLOADS
+// =====================================================
+
+function protectDownloadsLink() {
+
+  const selector =
+    'a[href$="downloads.html"], a[href*="/downloads.html"]';
+
+
+  const links =
+    Array.from(
+      document.querySelectorAll(selector)
+    );
+
+
+  if (!links.length) {
+    return;
+  }
+
+
+  links.forEach((link) => {
+
+    link.addEventListener(
+      'click',
+      async (e) => {
+
+        // Permitir Ctrl + clique, botão direito etc.
+        if (
+          e.metaKey ||
+          e.ctrlKey ||
+          e.shiftKey ||
+          e.button !== 0
+        ) {
+          return;
+        }
+
+
+        e.preventDefault();
+
+
+        try {
+
+          const allowed =
+            await requireDownloadAccess();
+
+
+          if (allowed) {
+
+            const href =
+              link.getAttribute('href') || '';
+
+
+            if (
+              /^(https?:)?\/\//.test(href) ||
+              href.startsWith('/')
+            ) {
+
+              const target =
+                href.startsWith('http')
+                  ? href
+                  : window.location.origin + href;
+
+
+              window.location.href = target;
+
+            } else {
+
+              window.location.href =
+                getSiteUrl(href);
+            }
+          }
+
+        } catch (err) {
+
+          console.error(
+            'Erro ao verificar acesso a downloads:',
+            err
+          );
+        }
+
+      }
+    );
+
   });
 }
 
-const authBar = document.getElementById('auth-bar');
 
-onAuthStateChanged(auth, (user) => {
-  if (!authBar) return;
+protectDownloadsLink();
 
-  if (user) {
-    authBar.innerHTML = `
-      <span>${user.displayName || user.email}</span>
-      ${
-        OWNER_UIDS.includes(user.uid)
-          ? '<a href="pages/admin-requests.html">Admin</a>'
-          : ''
+
+// =====================================================
+// BARRA DE AUTENTICAÇÃO
+// =====================================================
+
+const authBar =
+  document.getElementById('auth-bar');
+
+
+let currentUser = null;
+
+
+onAuthStateChanged(
+  auth,
+  (user) => {
+
+    currentUser = user;
+
+
+    if (!authBar) {
+      return;
+    }
+
+
+    // -----------------------------------------------
+    // USUÁRIO LOGADO
+    // -----------------------------------------------
+
+    if (user) {
+
+      authBar.innerHTML = `
+
+        <span class="auth-user">
+          ${user.displayName || user.email}
+        </span>
+
+        ${
+          OWNER_UIDS.includes(user.uid)
+            ? '<a href="pages/admin-requests.html" class="btn-admin">Admin</a>'
+            : ''
+        }
+
+        <button id="logout-btn">
+          Sair
+        </button>
+
+      `;
+
+
+      const logoutBtn =
+        document.getElementById('logout-btn');
+
+
+      if (logoutBtn) {
+
+        logoutBtn.addEventListener(
+          'click',
+          () => {
+            signOut(auth);
+          }
+        );
+
       }
-      <button id="logout-btn" type="button">Sair</button>
-    `;
 
-    document.getElementById('logout-btn').addEventListener('click', async () => {
-      await signOut(auth);
-      window.location.reload();
-    });
-  } else {
-    authBar.innerHTML = `
-      <a href="pages/login.html">Login</a>
-      <a href="pages/cadastro.html">Cadastro</a>
-    `;
+
+    // -----------------------------------------------
+    // USUÁRIO NÃO LOGADO
+    // -----------------------------------------------
+
+    } else {
+
+      authBar.innerHTML = `
+
+        <a href="pages/login.html" class="btn-login">
+          Login
+        </a>
+
+        <a href="pages/cadastro.html" class="btn-cadastro">
+          Cadastro
+        </a>
+
+      `;
+
+    }
+
   }
-});
+);
