@@ -12,7 +12,14 @@ const OWNER_UIDS = [
 ];
 // ...existing code...
 
+export async function requireDownloadAccess() {
+  const user = await getCurrentFirebaseUser();
 
+  if (!user) {
+    alert('Faça login para solicitar acesso aos downloads.');
+    window.location.href = getSiteUrl('pages/login.html');
+    return false;
+  }
 
   const authorized = await isDownloadsAuthorized(user);
 
@@ -95,15 +102,6 @@ async function getCurrentFirebaseUser() {
     });
   });
 }
-
-export async function requireDownloadAccess() {
-  const user = await getCurrentFirebaseUser();
-  if (!user) {
-    alert('Você precisa fazer login para acessar a área de downloads.');
-    window.location.href = getSiteUrl('pages/login.html');
-    return false;
-  }
-
   const granted = await isDownloadsAuthorized(user);
   if (!granted) {
     // If not authorized, create a permission request in Firestore (if none pending)
