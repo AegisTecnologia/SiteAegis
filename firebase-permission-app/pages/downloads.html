@@ -7,6 +7,18 @@
     <link rel="stylesheet" href="../css/styles.css">
     <script type="module" src="../js/firebase-auth.js"></script>
 </head>
+<!-- ...conteúdo existente... -->
+
+<script type="module">
+  import { requireDownloadAccess } from '../js/firebase-auth.js';
+
+  const allowed = await requireDownloadAccess();
+
+  if (!allowed) {
+    document.body.innerHTML = '';
+  }
+</script>
+
 <body>
     <header>
         <h1>Área de Downloads</h1>

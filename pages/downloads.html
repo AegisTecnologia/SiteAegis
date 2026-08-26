@@ -34,6 +34,18 @@
 
   gtag('config', 'G-D735DS66LM');
 </script>
+<!-- ...conteúdo existente... -->
+
+<script type="module">
+  import { requireDownloadAccess } from '../js/firebase-auth.js';
+
+  const allowed = await requireDownloadAccess();
+
+  if (!allowed) {
+    document.body.innerHTML = '';
+  }
+</script>
+
 
 
 <body style="opacity:0; transition: opacity 0.25s ease;">
