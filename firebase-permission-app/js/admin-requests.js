@@ -1,6 +1,11 @@
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 import { getFirestore, collection, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 import { app } from './firebase-config.js';
+import {
+  doc,
+  setDoc,
+  serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -15,7 +20,19 @@ async function approveRequest(requestId) {
   const requestDoc = doc(db, 'permission_requests', requestId);
   await updateDoc(requestDoc, { status: 'approved' });
 }
+// ...existing code...
 
+await setDoc(
+  doc(db, 'preapproved_users', request.email.toLowerCase().trim()),
+  {
+    email: request.email.toLowerCase().trim(),
+    status: 'approved',
+    approvedAt: serverTimestamp(),
+    approvedBy: user.uid
+  }
+);
+
+// ...existing code...
 async function rejectRequest(requestId) {
   const requestDoc = doc(db, 'permission_requests', requestId);
   await updateDoc(requestDoc, { status: 'rejected' });

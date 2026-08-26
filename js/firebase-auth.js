@@ -146,7 +146,42 @@ if (signupForm) {
       showMessage(msgEl, 'As senhas não conferem.', false);
       return;
     }
+// ...existing code...
 
+const emailKey = email.toLowerCase().trim();
+
+const approvalDoc = await getDoc(
+  doc(db, 'preapproved_users', emailKey)
+);
+
+if (!approvalDoc.exists() || approvalDoc.data().status !== 'approved') {
+  showMessage(
+    messageEl,
+    'Seu cadastro ainda não foi aprovado por um administrador.',
+    false
+  );
+  return;
+}
+
+// ...existing code...
+const userCredential = await createUserWithEmailAndPassword(
+  auth,
+  email,
+  password
+);
+
+await updateProfile(userCredential.user, {
+  displayName: name
+});
+
+await setDoc(doc(db, 'users', userCredential.user.uid), {
+  uid: userCredential.user.uid,
+  email: emailKey,
+  displayName: name,
+  createdAt: serverTimestamp()
+});
+
+// ...existing code...
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       if (name) {
