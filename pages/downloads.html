@@ -211,40 +211,13 @@
     <script src="../js/header.js"></script>
 
     
-
-    <script type="module">
-        import { requireDownloadAccess } from '../js/firebase-auth.js';
-
-        (async () => {
-            try {
-                const proceed = await requireDownloadAccess();
-                if (!proceed) {
-                    document.body.style.display = 'none';
-                    return;
-                }
-                document.body.style.opacity = '1';
-            } catch (error) {
-                console.error('Erro ao verificar acesso:', error);
-                document.body.style.display = 'none';
-            }
-        })();
-    </script>
-<!-- ...conteúdo existente... -->
-
 <script type="module">
   import { requireDownloadAccess } from '../js/firebase-auth.js';
 
-  try {
-    const autorizado = await requireDownloadAccess();
+  const autorizado = await requireDownloadAccess();
 
-    if (autorizado) {
-      document.body.style.opacity = '1';
-    } else {
-      document.body.innerHTML = '';
-    }
-  } catch (erro) {
-    console.error('Erro de autenticação:', erro);
-    document.body.innerHTML = '';
+  if (autorizado) {
+    document.body.style.opacity = '1';
   }
 </script>
 </body>
