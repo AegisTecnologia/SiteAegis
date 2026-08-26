@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área de Downloads</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="../js/firebase-auth.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Área de Downloads</h1>
+        <nav>
+            <a href="index.html">Início</a>
+            <a href="login.html">Login</a>
+            <a href="cadastro.html">Cadastro</a>
+            <a href="admin-requests.html">Admin</a>
+        </nav>
+    </header>
+    <main>
+        <section id="downloads-section">
+            <h2>Downloads Disponíveis</h2>
+            <p>Você precisa de permissão para acessar os downloads. Se você não tiver acesso, uma solicitação será enviada ao administrador.</p>
+            <button id="download-btn">Baixar Arquivo</button>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Sua Empresa. Todos os direitos reservados.</p>
+    </footer>
+    <script>
+        document.getElementById('download-btn').addEventListener('click', async () => {
+            const allowed = await requireDownloadAccess();
+            if (allowed) {
+                // Redirecionar para o arquivo de download
+                window.location.href = 'path/to/your/download/file.zip'; // Substitua pelo caminho real do arquivo
+            }
+        });
+    </script>
+</body>
+</html>

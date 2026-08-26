@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!-- filepath: c:\Users\iq086\OneDrive\Desktop\aegisTecnologia\firebase-permission-app\pages\admin-requests.html -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitações de acesso</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="../js/admin-requests.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>Solicitações de acesso</h1>
+
+        <nav>
+            <a href="../index.html">Início</a>
+            <a href="downloads.html">Downloads</a>
+            <button id="logout-btn" type="button">Sair</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="request-list">
+            <h2>Solicitações pendentes</h2>
+            <ul id="requests">
+                <li>Carregando solicitações...</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Aegis Tecnologia</p>
+    </footer>
+
+    <script type="module">
+        import {
+            getAuth,
+            signOut
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+        import { app } from '../js/firebase-config.js';
+
+        const auth = getAuth(app);
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Erro ao sair:', error);
+                alert('Não foi possível sair da conta.');
+            }
+        });
+    </script>
+</body>
+</html>
