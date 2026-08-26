@@ -13,13 +13,22 @@ const OWNER_UIDS = [
 
 async function isDownloadsAuthorized(user) {
   if (!user) return false;
+
   try {
-    const permissionDoc = await getDoc(doc(db, 'permissions', 'downloads'));
-    if (!permissionDoc.exists()) return false;
+    const permissionDoc = await getDoc(
+      doc(db, 'permissions', 'downloads')
+    );
+
+    if (!permissionDoc.exists()) {
+      return false;
+    }
+
     const data = permissionDoc.data();
-    return Array.isArray(data.allowedUids) && data.allowedUids.includes(user.uid);
+
+    return Array.isArray(data.allowedUids) &&
+      data.allowedUids.includes(user.uid);
   } catch (err) {
-    console.error('Error checking download permission:', err);
+    console.error('Erro ao verificar permissão:', err);
     return false;
   }
 }

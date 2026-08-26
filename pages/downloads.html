@@ -37,7 +37,15 @@
 
 
 <body style="opacity:0; transition: opacity 0.25s ease;">
+<script type="module">
+  import { requireDownloadAccess } from '../js/firebase-auth.js';
 
+  const permitted = await requireDownloadAccess();
+
+  if (!permitted) {
+    document.body.innerHTML = '';
+  }
+</script>
     <noscript>
         <style>body { opacity: 1 !important; }</style>
         <p style="padding: 16px; background: #fff3cd; color: #856404; border: 1px solid #ffeeba;">Este site requer JavaScript para verificar o acesso restrito.</p>

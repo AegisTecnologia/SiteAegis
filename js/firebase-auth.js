@@ -10,7 +10,35 @@ const OWNER_UIDS = [
   'nXA3dDI9J3emisozEjxwwEgVvw33',
   'Cu9C6CYcd7SDigdhWlrIdVPqgWG3'
 ];
+// ...existing code...
 
+export async function requireDownloadAccess() {
+  const user = await getCurrentFirebaseUser();
+
+  if (!user) {
+    alert('Faça login para solicitar acesso aos downloads.');
+    window.location.href = getSiteUrl('pages/login.html');
+    return false;
+  }
+
+  const authorized = await isDownloadsAuthorized(user);
+
+  if (authorized) {
+    return true;
+  }
+
+  const pending = await hasPendingRequest(user);
+
+  if (!pending) {
+    await createPermissionRequest(user);
+  }
+
+  alert('Você ainda não tem permissão. Solicitação enviada ao administrador.');
+  window.location.href = getSiteUrl('index.html');
+  return false;
+}
+
+// ...existing code...
 async function isDownloadsAuthorized(user) {
   if (!user) return false;
   try {
