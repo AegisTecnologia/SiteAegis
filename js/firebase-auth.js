@@ -22,8 +22,19 @@ import {
 
 import { app } from './firebase-config.js';
 
+
+// =====================================================
+// FIREBASE
+// =====================================================
+
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+// IMPORTANTE:
+// Usar explicitamente o banco do seu projeto.
+const db = getFirestore(
+  app,
+  'ai-studio-faf5b93d-e8d8-4798-90a4-96f05f6f5855'
+);
 
 
 // =====================================================
@@ -41,11 +52,17 @@ const OWNER_UIDS = [
 // =====================================================
 
 async function getCurrentFirebaseUser() {
+
   return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
-      resolve(user);
-    });
+
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        unsubscribe();
+        resolve(user);
+      }
+    );
+
   });
 }
 
@@ -55,6 +72,7 @@ async function getCurrentFirebaseUser() {
 // =====================================================
 
 function getSiteBasePath() {
+
   const path = window.location.pathname;
 
   let base = path
@@ -66,15 +84,26 @@ function getSiteBasePath() {
 
 
 function getSiteUrl(relativePath) {
-  const base = getSiteBasePath().replace(/\/$/, '');
-  const cleanPath = relativePath.replace(/^\//, '');
 
-  return window.location.origin + base + '/' + cleanPath;
+  const base =
+    getSiteBasePath().replace(/\/$/, '');
+
+  const cleanPath =
+    relativePath.replace(/^\//, '');
+
+  return (
+    window.location.origin +
+    base +
+    '/' +
+    cleanPath
+  );
 }
 
 
 function redirectToIndex() {
-  window.location.href = getSiteUrl('index.html');
+
+  window.location.href =
+    getSiteUrl('index.html');
 }
 
 
@@ -83,20 +112,28 @@ function redirectToIndex() {
 // =====================================================
 
 async function isDownloadsAuthorized(user) {
+
   if (!user) {
     return false;
   }
 
   try {
-    const permissionDoc = await getDoc(
-      doc(db, 'permissions', 'downloads')
-    );
+
+    const permissionDoc =
+      await getDoc(
+        doc(
+          db,
+          'permissions',
+          'downloads'
+        )
+      );
 
     if (!permissionDoc.exists()) {
       return false;
     }
 
-    const data = permissionDoc.data();
+    const data =
+      permissionDoc.data();
 
     return (
       Array.isArray(data.allowedUids) &&
@@ -104,6 +141,7 @@ async function isDownloadsAuthorized(user) {
     );
 
   } catch (err) {
+
     console.error(
       'Erro ao verificar permissão de downloads:',
       err
@@ -114,19 +152,39 @@ async function isDownloadsAuthorized(user) {
 }
 
 
-async function hasPendingRequest(user) {
-  try {
-    const q = query(
-      collection(db, 'permission_requests'),
-      where('uid', '==', user.uid),
-      where('status', '==', 'pending')
-    );
+// =====================================================
+// SOLICITAÇÕES PENDENTES
+// =====================================================
 
-    const snap = await getDocs(q);
+async function hasPendingRequest(user) {
+
+  try {
+
+    const q =
+      query(
+        collection(
+          db,
+          'permission_requests'
+        ),
+        where(
+          'uid',
+          '==',
+          user.uid
+        ),
+        where(
+          'status',
+          '==',
+          'pending'
+        )
+      );
+
+    const snap =
+      await getDocs(q);
 
     return !snap.empty;
 
   } catch (err) {
+
     console.error(
       'Erro ao checar solicitações pendentes:',
       err
@@ -137,24 +195,45 @@ async function hasPendingRequest(user) {
 }
 
 
+// =====================================================
+// CRIAR SOLICITAÇÃO
+// =====================================================
+
 async function createPermissionRequest(user) {
+
   try {
+
     const request = {
+
       uid: user.uid,
-      email: user.email || null,
-      displayName: user.displayName || null,
-      status: 'pending',
-      createdAt: serverTimestamp()
+
+      email:
+        user.email || null,
+
+      displayName:
+        user.displayName || null,
+
+      status:
+        'pending',
+
+      createdAt:
+        serverTimestamp()
     };
 
+
     await addDoc(
-      collection(db, 'permission_requests'),
+      collection(
+        db,
+        'permission_requests'
+      ),
       request
     );
+
 
     return true;
 
   } catch (err) {
+
     console.error(
       'Erro ao criar solicitação de permissão:',
       err
@@ -171,7 +250,9 @@ async function createPermissionRequest(user) {
 
 export async function requireDownloadAccess() {
 
-  const user = await getCurrentFirebaseUser();
+  const user =
+    await getCurrentFirebaseUser();
+
 
   if (!user) {
 
@@ -179,22 +260,27 @@ export async function requireDownloadAccess() {
       'Faça login para solicitar acesso aos downloads.'
     );
 
-    window.location.href = getSiteUrl(
-      'pages/login.html'
-    );
+    window.location.href =
+      getSiteUrl(
+        'pages/login.html'
+      );
 
     return false;
   }
 
 
-  const authorized = await isDownloadsAuthorized(user);
+  const authorized =
+    await isDownloadsAuthorized(user);
+
 
   if (authorized) {
     return true;
   }
 
 
-  const pending = await hasPendingRequest(user);
+  const pending =
+    await hasPendingRequest(user);
+
 
   if (!pending) {
     await createPermissionRequest(user);
@@ -205,7 +291,10 @@ export async function requireDownloadAccess() {
     'Você ainda não tem permissão. Solicitação enviada ao administrador.'
   );
 
-  window.location.href = getSiteUrl('index.html');
+
+  window.location.href =
+    getSiteUrl('index.html');
+
 
   return false;
 }
@@ -217,15 +306,20 @@ export async function requireDownloadAccess() {
 
 function createMessageElement(form) {
 
-  let msgEl = form.querySelector('#form-message');
+  let msgEl =
+    form.querySelector('#form-message');
+
 
   if (!msgEl) {
 
-    msgEl = document.createElement('div');
+    msgEl =
+      document.createElement('div');
 
-    msgEl.className = 'message';
+    msgEl.className =
+      'message';
 
-    msgEl.id = 'form-message';
+    msgEl.id =
+      'form-message';
 
     msgEl.setAttribute(
       'aria-live',
@@ -237,6 +331,7 @@ function createMessageElement(form) {
       form.firstChild
     );
   }
+
 
   return msgEl;
 }
@@ -252,11 +347,15 @@ function showMessage(
     return;
   }
 
-  el.textContent = msg;
 
-  el.style.color = success
-    ? 'green'
-    : 'red';
+  el.textContent =
+    msg;
+
+
+  el.style.color =
+    success
+      ? 'green'
+      : 'red';
 }
 
 
@@ -265,7 +364,9 @@ function showMessage(
 // =====================================================
 
 const signupForm =
-  document.getElementById('signup-form');
+  document.getElementById(
+    'signup-form'
+  );
 
 
 if (signupForm) {
@@ -288,7 +389,8 @@ if (signupForm) {
         document
           .getElementById('signup-email')
           .value
-          .trim();
+          .trim()
+          .toLowerCase();
 
 
       const password =
@@ -299,16 +401,20 @@ if (signupForm) {
 
       const confirm =
         document
-          .getElementById('signup-password-confirm')
+          .getElementById(
+            'signup-password-confirm'
+          )
           .value;
 
 
       const msgEl =
-        createMessageElement(signupForm);
+        createMessageElement(
+          signupForm
+        );
 
 
       // ---------------------------------------------
-      // CONFIRMAR SENHA
+      // CONFIRMAR SENHAS
       // ---------------------------------------------
 
       if (password !== confirm) {
@@ -323,14 +429,32 @@ if (signupForm) {
       }
 
 
+      // ---------------------------------------------
+      // SENHA MÍNIMA
+      // ---------------------------------------------
+
+      if (password.length < 6) {
+
+        showMessage(
+          msgEl,
+          'A senha precisa ter pelo menos 6 caracteres.',
+          false
+        );
+
+        return;
+      }
+
+
       try {
 
         // -------------------------------------------
-        // VERIFICAR APROVAÇÃO
+        // VERIFICAR USUÁRIO PRÉ-APROVADO
         // -------------------------------------------
 
-        const emailKey =
-          email.toLowerCase().trim();
+        console.log(
+          'Verificando aprovação do e-mail:',
+          email
+        );
 
 
         const approvalDoc =
@@ -338,9 +462,15 @@ if (signupForm) {
             doc(
               db,
               'preapproved_users',
-              emailKey
+              email
             )
           );
+
+
+        console.log(
+          'Documento de aprovação:',
+          approvalDoc.exists()
+        );
 
 
         if (
@@ -359,8 +489,13 @@ if (signupForm) {
 
 
         // -------------------------------------------
-        // CRIAR USUÁRIO
+        // CRIAR CONTA NO AUTHENTICATION
         // -------------------------------------------
+
+        console.log(
+          'Criando usuário no Firebase Authentication...'
+        );
+
 
         const userCredential =
           await createUserWithEmailAndPassword(
@@ -370,8 +505,14 @@ if (signupForm) {
           );
 
 
+        console.log(
+          'Usuário criado:',
+          userCredential.user.uid
+        );
+
+
         // -------------------------------------------
-        // SALVAR NOME
+        // ATUALIZAR NOME
         // -------------------------------------------
 
         if (name) {
@@ -389,6 +530,11 @@ if (signupForm) {
         // SALVAR USUÁRIO NO FIRESTORE
         // -------------------------------------------
 
+        console.log(
+          'Salvando usuário no Firestore...'
+        );
+
+
         await setDoc(
           doc(
             db,
@@ -396,11 +542,23 @@ if (signupForm) {
             userCredential.user.uid
           ),
           {
-            uid: userCredential.user.uid,
-            email: emailKey,
-            displayName: name,
-            createdAt: serverTimestamp()
+            uid:
+              userCredential.user.uid,
+
+            email:
+              email,
+
+            displayName:
+              name,
+
+            createdAt:
+              serverTimestamp()
           }
+        );
+
+
+        console.log(
+          'Usuário salvo no Firestore!'
         );
 
 
@@ -410,7 +568,7 @@ if (signupForm) {
 
         showMessage(
           msgEl,
-          'Cadastro realizado com sucesso. Redirecionando...',
+          'Cadastro realizado com sucesso! Redirecionando...',
           true
         );
 
@@ -426,14 +584,57 @@ if (signupForm) {
       } catch (err) {
 
         console.error(
-          'Erro no cadastro:',
+          'ERRO COMPLETO NO CADASTRO:',
           err
         );
 
 
+        let mensagem =
+          'Não foi possível realizar o cadastro.';
+
+
+        if (
+          err.code ===
+          'permission-denied'
+        ) {
+
+          mensagem =
+            'O Firestore recusou o acesso. Verifique as Rules e o banco utilizado.';
+
+        } else if (
+          err.code ===
+          'auth/email-already-in-use'
+        ) {
+
+          mensagem =
+            'Este e-mail já possui uma conta.';
+
+        } else if (
+          err.code ===
+          'auth/invalid-email'
+        ) {
+
+          mensagem =
+            'O e-mail informado é inválido.';
+
+        } else if (
+          err.code ===
+          'auth/weak-password'
+        ) {
+
+          mensagem =
+            'A senha precisa ter pelo menos 6 caracteres.';
+
+        } else if (err.message) {
+
+          mensagem =
+            err.message;
+        }
+
+
         showMessage(
           msgEl,
-          err.message || 'Erro no cadastro.',
+          mensagem,
           false
         );
       }
@@ -448,7 +649,9 @@ if (signupForm) {
 // =====================================================
 
 const loginForm =
-  document.getElementById('login-form');
+  document.getElementById(
+    'login-form'
+  );
 
 
 if (loginForm) {
@@ -474,7 +677,9 @@ if (loginForm) {
 
 
       const msgEl =
-        createMessageElement(loginForm);
+        createMessageElement(
+          loginForm
+        );
 
 
       try {
@@ -511,7 +716,8 @@ if (loginForm) {
 
         showMessage(
           msgEl,
-          err.message || 'Erro no login.',
+          err.message ||
+            'Erro no login.',
           false
         );
       }
@@ -533,7 +739,9 @@ function protectDownloadsLink() {
 
   const links =
     Array.from(
-      document.querySelectorAll(selector)
+      document.querySelectorAll(
+        selector
+      )
     );
 
 
@@ -542,36 +750,41 @@ function protectDownloadsLink() {
   }
 
 
-  links.forEach((link) => {
+  links.forEach(
+    (link) => {
 
-    link.addEventListener(
-      'click',
-      async (e) => {
+      link.addEventListener(
+        'click',
+        async (e) => {
 
-        // Permitir Ctrl + clique, botão direito etc.
-        if (
-          e.metaKey ||
-          e.ctrlKey ||
-          e.shiftKey ||
-          e.button !== 0
-        ) {
-          return;
-        }
-
-
-        e.preventDefault();
+          if (
+            e.metaKey ||
+            e.ctrlKey ||
+            e.shiftKey ||
+            e.button !== 0
+          ) {
+            return;
+          }
 
 
-        try {
-
-          const allowed =
-            await requireDownloadAccess();
+          e.preventDefault();
 
 
-          if (allowed) {
+          try {
+
+            const allowed =
+              await requireDownloadAccess();
+
+
+            if (!allowed) {
+              return;
+            }
+
 
             const href =
-              link.getAttribute('href') || '';
+              link.getAttribute(
+                'href'
+              ) || '';
 
 
             if (
@@ -585,27 +798,29 @@ function protectDownloadsLink() {
                   : window.location.origin + href;
 
 
-              window.location.href = target;
+              window.location.href =
+                target;
 
             } else {
 
               window.location.href =
                 getSiteUrl(href);
             }
+
+
+          } catch (err) {
+
+            console.error(
+              'Erro ao verificar acesso a downloads:',
+              err
+            );
           }
 
-        } catch (err) {
-
-          console.error(
-            'Erro ao verificar acesso a downloads:',
-            err
-          );
         }
+      );
 
-      }
-    );
-
-  });
+    }
+  );
 }
 
 
@@ -617,17 +832,21 @@ protectDownloadsLink();
 // =====================================================
 
 const authBar =
-  document.getElementById('auth-bar');
+  document.getElementById(
+    'auth-bar'
+  );
 
 
-let currentUser = null;
+let currentUser =
+  null;
 
 
 onAuthStateChanged(
   auth,
   (user) => {
 
-    currentUser = user;
+    currentUser =
+      user;
 
 
     if (!authBar) {
@@ -636,7 +855,7 @@ onAuthStateChanged(
 
 
     // -----------------------------------------------
-    // USUÁRIO LOGADO
+    // LOGADO
     // -----------------------------------------------
 
     if (user) {
@@ -649,11 +868,21 @@ onAuthStateChanged(
 
         ${
           OWNER_UIDS.includes(user.uid)
-            ? '<a href="pages/admin-requests.html" class="btn-admin">Admin</a>'
+            ? `
+              <a
+                href="pages/admin-requests.html"
+                class="btn-admin"
+              >
+                Admin
+              </a>
+            `
             : ''
         }
 
-        <button id="logout-btn">
+        <button
+          id="logout-btn"
+          type="button"
+        >
           Sair
         </button>
 
@@ -661,39 +890,59 @@ onAuthStateChanged(
 
 
       const logoutBtn =
-        document.getElementById('logout-btn');
+        document.getElementById(
+          'logout-btn'
+        );
 
 
       if (logoutBtn) {
 
         logoutBtn.addEventListener(
           'click',
-          () => {
-            signOut(auth);
+          async () => {
+
+            try {
+
+              await signOut(
+                auth
+              );
+
+            } catch (err) {
+
+              console.error(
+                'Erro ao sair:',
+                err
+              );
+            }
+
           }
         );
-
       }
 
 
     // -----------------------------------------------
-    // USUÁRIO NÃO LOGADO
+    // NÃO LOGADO
     // -----------------------------------------------
 
     } else {
 
       authBar.innerHTML = `
 
-        <a href="pages/login.html" class="btn-login">
+        <a
+          href="pages/login.html"
+          class="btn-login"
+        >
           Login
         </a>
 
-        <a href="pages/cadastro.html" class="btn-cadastro">
+        <a
+          href="pages/cadastro.html"
+          class="btn-cadastro"
+        >
           Cadastro
         </a>
 
       `;
-
     }
 
   }

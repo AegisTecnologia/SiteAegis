@@ -1,4 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC4xWHLntD3337DqGeIpS8BWXfFMXEiqCU",
@@ -10,4 +11,9 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
- 
+
+// Conecta especificamente ao banco que você está usando
+export const db = getFirestore(
+  app,
+  'ai-studio-faf5b93d-e8d8-4798-90a4-96f05f6f5855'
+);
