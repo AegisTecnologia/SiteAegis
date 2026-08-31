@@ -123,18 +123,18 @@
 
 
     import {
-      getFirestore,
-      collection,
-      query,
-      where,
-      getDocs,
-      updateDoc,
-      doc,
-      arrayUnion,
-      setDoc,
-      serverTimestamp
-    } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
-
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  getDoc,
+  updateDoc,
+  doc,
+  arrayUnion,
+  setDoc,
+  serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
     // =====================================================
     // FIREBASE
@@ -151,14 +151,6 @@
     // =====================================================
     // PROPRIETÁRIOS
     // =====================================================
-
-    const OWNERS = [
-
-      'nXA3dDI9J3emisozEjxwwEgVvw33',
-
-      'Cu9C6CYcd7SDigdhWlrIdVPqgWG3'
-
-    ];
 
 
     // =====================================================
@@ -212,21 +204,24 @@
           return;
         }
 
+// =====================================================
+// VERIFICAR SE É ADMINISTRADOR
+// =====================================================
 
-        if (!OWNERS.includes(user.uid)) {
+const adminRef = doc(db, 'admins', user.uid);
+const adminSnap = await getDoc(adminRef);
 
-          alert(
-            'Acesso negado: usuário não é proprietário.'
-          );
+if (!adminSnap.exists() || adminSnap.data().ativo !== true) {
 
-          window.location.href =
-            getSiteUrl(
-              'index.html'
-            );
+  alert(
+    'Acesso negado: você não é administrador.'
+  );
 
-          return;
-        }
+  window.location.href =
+    getSiteUrl('index.html');
 
+  return;
+}
 
         document
           .getElementById('status')
