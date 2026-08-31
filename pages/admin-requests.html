@@ -2,288 +2,665 @@
 
 <html lang="pt-br">
 
-
-
 <head>
 
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Admin - Solicitações de Permissão</title>
-<ul id="requests"></ul>
+  <title>Admin - Solicitações</title>
+
   <style>
 
-    body{font-family:Arial,Helvetica,sans-serif;padding:24px}
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 24px;
+      max-width: 1000px;
+      margin: auto;
+    }
 
-    .req{border:1px solid #ddd;padding:12px;margin-bottom:8px}
+    .back-home {
+      display: inline-block;
+      margin-bottom: 20px;
+    }
 
-    button{margin-right:8px}
+    .back-home img {
+      width: 180px;
+      height: auto;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    #status {
+      margin-bottom: 20px;
+    }
+
+    .req {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+
+    .req strong {
+      font-size: 18px;
+    }
+
+    .req div {
+      margin-top: 6px;
+    }
+
+    .actions {
+      margin-top: 15px;
+    }
+
+    button {
+      padding: 9px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+
+    .approve {
+      background: #198754;
+      color: white;
+    }
+
+    .reject {
+      background: #dc3545;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .approved {
+      color: green;
+      font-weight: bold;
+      margin-top: 12px;
+    }
+
+    .rejected {
+      color: orange;
+      font-weight: bold;
+      margin-top: 12px;
+    }
 
   </style>
 
 </head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-D735DS66LM"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-D735DS66LM');
-</script>
-
 
 <body>
 
   <a href="../index.html" class="back-home">
-    <img src="../img/aegisTecnologiaLogo.png" alt="Aegis Tecnologia">
+    <img
+      src="../img/aegisTecnologiaLogo.png"
+      alt="Aegis Tecnologia"
+    >
   </a>
 
-  <h1>Solicitações de Permissão - Downloads</h1>
+  <h1>Solicitações de Cadastro</h1>
 
-  <p id="status">Carregando...</p>
+  <p id="status">Verificando autenticação...</p>
 
   <div id="list"></div>
 
-  <script src="../js/header.js"></script>
   <script type="module">
 
-    import { app } from '../js/firebase-config.js';
+    import { app }
+      from '../js/firebase-config.js';
 
-    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 
     import {
+      getAuth,
+      onAuthStateChanged
+    } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 
+
+    import {
       getFirestore,
-
       collection,
-
       query,
-
       where,
-
       getDocs,
-
       updateDoc,
-
       doc,
-
       arrayUnion,
-
       setDoc,
-
       serverTimestamp
-
     } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
 
+    // =====================================================
+    // FIREBASE
+    // =====================================================
 
     const auth = getAuth(app);
 
-    const db = getFirestore(app);
+    const db = getFirestore(
+      app,
+      'ai-studio-faf5b93d-e8d8-4798-90a4-96f05f6f5855'
+    );
 
 
-
-    // Substitua pelos UIDs reais dos proprietários
+    // =====================================================
+    // PROPRIETÁRIOS
+    // =====================================================
 
     const OWNERS = [
 
-      'OWNER_UID_1',
+      'nXA3dDI9J3emisozEjxwwEgVvw33',
 
-      'OutroUIDdoProprietario'
+      'Cu9C6CYcd7SDigdhWlrIdVPqgWG3'
 
     ];
 
 
+    // =====================================================
+    // URL DO SITE
+    // =====================================================
 
     function getSiteUrl(relativePath) {
 
-      const path = window.location.pathname;
+      const path =
+        window.location.pathname;
 
-      const base = path.replace(/\/pages\/.*$/, '');
+      const base =
+        path.replace(
+          /\/pages\/.*$/,
+          ''
+        );
 
-      const b = base === '' ? '/' : base;
+      const b =
+        base === ''
+          ? '/'
+          : base;
 
-      return window.location.origin + b.replace(/\/$/, '') + '/' + relativePath.replace(/^\//, '');
-
+      return (
+        window.location.origin +
+        b.replace(/\/$/, '') +
+        '/' +
+        relativePath.replace(/^\//, '')
+      );
     }
 
 
+    // =====================================================
+    // AUTENTICAÇÃO DO ADMIN
+    // =====================================================
 
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(
+      auth,
+      async (user) => {
 
-      if (!user) {
+        if (!user) {
 
-        alert('Faça login como proprietário para acessar esta página.');
+          alert(
+            'Faça login como proprietário para acessar esta página.'
+          );
 
-        window.location.href = getSiteUrl('pages/login.html');
+          window.location.href =
+            getSiteUrl(
+              'pages/login.html'
+            );
 
-        return;
+          return;
+        }
+
+
+        if (!OWNERS.includes(user.uid)) {
+
+          alert(
+            'Acesso negado: usuário não é proprietário.'
+          );
+
+          window.location.href =
+            getSiteUrl(
+              'index.html'
+            );
+
+          return;
+        }
+
+
+        document
+          .getElementById('status')
+          .textContent =
+            'Autenticado como ' +
+            (
+              user.displayName ||
+              user.email
+            );
+
+
+        await renderList();
 
       }
-
-      if (!OWNERS.includes(user.uid)) {
-
-        alert('Acesso negado: usuário não é proprietário.');
-
-        window.location.href = getSiteUrl('index.html');
-
-        return;
-
-      }
-
-      document.getElementById('status').textContent = 'Autenticado como ' + (user.displayName || user.email);
-
-      await renderList();
-
-    });
+    );
 
 
+    // =====================================================
+    // LISTAR SOLICITAÇÕES
+    // =====================================================
 
     async function renderList() {
 
-      const listEl = document.getElementById('list');
+      const listEl =
+        document.getElementById(
+          'list'
+        );
+
 
       listEl.innerHTML = '';
 
-      document.getElementById('status').textContent = 'Buscando solicitações pendentes...';
+
+      document
+        .getElementById('status')
+        .textContent =
+          'Buscando solicitações pendentes...';
 
 
+      try {
 
-      const q = query(collection(db, 'permission_requests'), where('status', '==', 'pending'));
+        const q =
+          query(
+            collection(
+              db,
+              'permission_requests'
+            ),
+            where(
+              'status',
+              '==',
+              'pending'
+            )
+          );
 
-      const snap = await getDocs(q);
 
-      if (snap.empty) {
+        const snap =
+          await getDocs(q);
 
-        document.getElementById('status').textContent = 'Nenhuma solicitação pendente.';
 
-        return;
+        if (snap.empty) {
+
+          document
+            .getElementById('status')
+            .textContent =
+              'Nenhuma solicitação pendente.';
+
+          return;
+        }
+
+
+        document
+          .getElementById('status')
+          .textContent =
+            'Solicitações pendentes: ' +
+            snap.size;
+
+
+        snap.forEach(
+          (docSnap) => {
+
+            const data =
+              docSnap.data();
+
+
+            const id =
+              docSnap.id;
+
+
+            const el =
+              document.createElement(
+                'div'
+              );
+
+
+            el.className =
+              'req';
+
+
+            const dataSolicitacao =
+              data.createdAt
+                ? data.createdAt.toDate().toLocaleString('pt-BR')
+                : '—';
+
+
+            el.innerHTML = `
+
+              <strong>
+                ${data.displayName || 'Usuário'}
+              </strong>
+
+              <div>
+                UID: ${data.uid || '—'}
+              </div>
+
+              <div>
+                Email: ${data.email || '—'}
+              </div>
+
+              <div>
+                Solicitado em: ${dataSolicitacao}
+              </div>
+
+              <div class="actions"></div>
+
+            `;
+
+
+            const actions =
+              el.querySelector(
+                '.actions'
+              );
+
+
+            // =============================================
+            // BOTÃO APROVAR
+            // =============================================
+
+            const approve =
+              document.createElement(
+                'button'
+              );
+
+
+            approve.textContent =
+              'Aprovar';
+
+
+            approve.className =
+              'approve';
+
+
+            approve.addEventListener(
+              'click',
+              async () => {
+
+                approve.disabled =
+                  true;
+
+                reject.disabled =
+                  true;
+
+
+                try {
+
+                  // ---------------------------------------
+                  // 1. APROVAR USUÁRIO
+                  // ---------------------------------------
+
+                  await updateDoc(
+                    doc(
+                      db,
+                      'users',
+                      data.uid
+                    ),
+                    {
+                      status:
+                        'approved',
+
+                      approvedAt:
+                        serverTimestamp()
+                    }
+                  );
+
+
+                  // ---------------------------------------
+                  // 2. APROVAR SOLICITAÇÃO
+                  // ---------------------------------------
+
+                  await updateDoc(
+                    doc(
+                      db,
+                      'permission_requests',
+                      id
+                    ),
+                    {
+                      status:
+                        'approved',
+
+                      handledAt:
+                        serverTimestamp(),
+
+                      handledBy:
+                        auth.currentUser.uid
+                    }
+                  );
+
+
+                  // ---------------------------------------
+                  // 3. LIBERAR DOWNLOADS
+                  // ---------------------------------------
+
+                  const permRef =
+                    doc(
+                      db,
+                      'permissions',
+                      'downloads'
+                    );
+
+
+                  try {
+
+                    await updateDoc(
+                      permRef,
+                      {
+                        allowedUids:
+                          arrayUnion(
+                            data.uid
+                          )
+                      }
+                    );
+
+                  } catch (e) {
+
+                    await setDoc(
+                      permRef,
+                      {
+                        allowedUids:
+                          [data.uid]
+                      }
+                    );
+
+                  }
+
+
+                  el.style.opacity =
+                    '0.5';
+
+
+                  actions.innerHTML = `
+
+                    <div class="approved">
+                      ✓ Cadastro aprovado com sucesso.
+                    </div>
+
+                  `;
+
+
+                } catch (err) {
+
+                  console.error(
+                    'Erro ao aprovar usuário:',
+                    err
+                  );
+
+
+                  alert(
+                    'Erro ao aprovar. Veja o console.'
+                  );
+
+
+                  approve.disabled =
+                    false;
+
+                  reject.disabled =
+                    false;
+
+                }
+
+              }
+            );
+
+
+            // =============================================
+            // BOTÃO REJEITAR
+            // =============================================
+
+            const reject =
+              document.createElement(
+                'button'
+              );
+
+
+            reject.textContent =
+              'Rejeitar';
+
+
+            reject.className =
+              'reject';
+
+
+            reject.addEventListener(
+              'click',
+              async () => {
+
+                reject.disabled =
+                  true;
+
+                approve.disabled =
+                  true;
+
+
+                try {
+
+                  // ---------------------------------------
+                  // 1. REJEITAR USUÁRIO
+                  // ---------------------------------------
+
+                  await updateDoc(
+                    doc(
+                      db,
+                      'users',
+                      data.uid
+                    ),
+                    {
+                      status:
+                        'rejected',
+
+                      rejectedAt:
+                        serverTimestamp()
+                    }
+                  );
+
+
+                  // ---------------------------------------
+                  // 2. REJEITAR SOLICITAÇÃO
+                  // ---------------------------------------
+
+                  await updateDoc(
+                    doc(
+                      db,
+                      'permission_requests',
+                      id
+                    ),
+                    {
+                      status:
+                        'rejected',
+
+                      handledAt:
+                        serverTimestamp(),
+
+                      handledBy:
+                        auth.currentUser.uid
+                    }
+                  );
+
+
+                  el.style.opacity =
+                    '0.5';
+
+
+                  actions.innerHTML = `
+
+                    <div class="rejected">
+                      ✕ Cadastro rejeitado.
+                    </div>
+
+                  `;
+
+
+                } catch (err) {
+
+                  console.error(
+                    'Erro ao rejeitar usuário:',
+                    err
+                  );
+
+
+                  alert(
+                    'Erro ao rejeitar. Veja o console.'
+                  );
+
+
+                  approve.disabled =
+                    false;
+
+                  reject.disabled =
+                    false;
+
+                }
+
+              }
+            );
+
+
+            actions.appendChild(
+              approve
+            );
+
+
+            actions.appendChild(
+              reject
+            );
+
+
+            listEl.appendChild(
+              el
+            );
+
+          }
+        );
+
+      } catch (err) {
+
+        console.error(
+          'Erro ao carregar solicitações:',
+          err
+        );
+
+
+        document
+          .getElementById('status')
+          .textContent =
+            'Erro ao carregar solicitações.';
+
+
+        alert(
+          'Erro ao carregar solicitações. Verifique as Rules do Firestore e o console.'
+        );
 
       }
-
-      document.getElementById('status').textContent = 'Solicitações pendentes:';
-
-
-
-      snap.forEach((docSnap) => {
-
-        const data = docSnap.data();
-
-        const id = docSnap.id;
-
-        const el = document.createElement('div');
-
-        el.className = 'req';
-
-        el.innerHTML = `
-
-          <strong>${data.displayName || data.email || data.uid}</strong>
-
-          <div>UID: ${data.uid}</div>
-
-          <div>Email: ${data.email || '—'}</div>
-
-          <div>Solicitado em: ${data.createdAt ? data.createdAt.toDate() : '—'}</div>
-
-        `;
-
-
-
-        const approve = document.createElement('button');
-
-        approve.textContent = 'Aprovar';
-
-        approve.addEventListener('click', async () => {
-
-          approve.disabled = true;
-
-          try {
-
-            const permRef = doc(db, 'permissions', 'downloads');
-
-            // tenta atualizar com arrayUnion; se não existir, cria
-
-            try {
-
-              await updateDoc(permRef, { allowedUids: arrayUnion(data.uid) });
-
-            } catch (e) {
-
-              // se update falhar (doc não existe), cria com setDoc
-
-              await setDoc(permRef, { allowedUids: [data.uid] });
-
-            }
-
-            await updateDoc(doc(db, 'permission_requests', id), { status: 'approved', handledAt: serverTimestamp() });
-
-            el.style.opacity = '0.5';
-
-            el.insertAdjacentHTML('beforeend', '<div style="color:green">Aprovado</div>');
-
-          } catch (err) {
-
-            console.error(err);
-
-            alert('Erro ao aprovar. Veja o console.');
-
-            approve.disabled = false;
-
-          }
-
-        });
-
-
-
-        const reject = document.createElement('button');
-
-        reject.textContent = 'Rejeitar';
-
-        reject.addEventListener('click', async () => {
-
-          reject.disabled = true;
-
-          try {
-
-            await updateDoc(doc(db, 'permission_requests', id), { status: 'rejected', handledAt: serverTimestamp() });
-
-            el.style.opacity = '0.5';
-
-            el.insertAdjacentHTML('beforeend', '<div style="color:orange">Rejeitado</div>');
-
-          } catch (err) {
-
-            console.error(err);
-
-            alert('Erro ao rejeitar. Veja o console.');
-
-            reject.disabled = false;
-
-          }
-
-        });
-
-
-
-        el.appendChild(approve);
-
-        el.appendChild(reject);
-
-        listEl.appendChild(el);
-
-      });
 
     }
 
   </script>
 
-    <script src="../js/header.js"></script>
-
 </body>
 
-
-
 </html>
-

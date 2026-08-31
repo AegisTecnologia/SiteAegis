@@ -17,7 +17,8 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  updateDoc
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
 import { app } from './firebase-config.js';
@@ -29,8 +30,7 @@ import { app } from './firebase-config.js';
 
 const auth = getAuth(app);
 
-// IMPORTANTE:
-// Usar explicitamente o banco do seu projeto.
+// Banco utilizado pelo projeto
 const db = getFirestore(
   app,
   'ai-studio-faf5b93d-e8d8-4798-90a4-96f05f6f5855'
@@ -52,9 +52,7 @@ const OWNER_UIDS = [
 // =====================================================
 
 async function getCurrentFirebaseUser() {
-
   return new Promise((resolve) => {
-
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
@@ -62,7 +60,6 @@ async function getCurrentFirebaseUser() {
         resolve(user);
       }
     );
-
   });
 }
 
@@ -72,7 +69,6 @@ async function getCurrentFirebaseUser() {
 // =====================================================
 
 function getSiteBasePath() {
-
   const path = window.location.pathname;
 
   let base = path
@@ -84,12 +80,9 @@ function getSiteBasePath() {
 
 
 function getSiteUrl(relativePath) {
+  const base = getSiteBasePath().replace(/\/$/, '');
 
-  const base =
-    getSiteBasePath().replace(/\/$/, '');
-
-  const cleanPath =
-    relativePath.replace(/^\//, '');
+  const cleanPath = relativePath.replace(/^\//, '');
 
   return (
     window.location.origin +
@@ -101,20 +94,80 @@ function getSiteUrl(relativePath) {
 
 
 function redirectToIndex() {
-
-  window.location.href =
-    getSiteUrl('index.html');
+  window.location.href = getSiteUrl('index.html');
 }
 
 
 // =====================================================
-// PERMISSÕES DE DOWNLOAD
+// VERIFICAR STATUS DO CADASTRO
+// =====================================================
+
+async function getUserApprovalStatus(user) {
+  if (!user) {
+    return null;
+  }
+
+  try {
+    const userDoc = await getDoc(
+      doc(
+        db,
+        'users',
+        user.uid
+      )
+    );
+
+    if (!userDoc.exists()) {
+      return null;
+    }
+
+    const data = userDoc.data();
+
+    return data.status || 'pending';
+
+  } catch (err) {
+
+    console.error(
+      'Erro ao verificar status do usuário:',
+      err
+    );
+
+    return null;
+  }
+}
+
+
+// =====================================================
+// VERIFICAR APROVAÇÃO
+// =====================================================
+
+async function isUserApproved(user) {
+  if (!user) {
+    return false;
+  }
+
+  // Os proprietários sempre têm acesso
+  if (OWNER_UIDS.includes(user.uid)) {
+    return true;
+  }
+
+  const status = await getUserApprovalStatus(user);
+
+  return status === 'approved';
+}
+
+
+// =====================================================
+// VERIFICAR PERMISSÕES DE DOWNLOAD
 // =====================================================
 
 async function isDownloadsAuthorized(user) {
-
   if (!user) {
     return false;
+  }
+
+  // Proprietários sempre podem baixar
+  if (OWNER_UIDS.includes(user.uid)) {
+    return true;
   }
 
   try {
@@ -153,10 +206,13 @@ async function isDownloadsAuthorized(user) {
 
 
 // =====================================================
-// SOLICITAÇÕES PENDENTES
+// VERIFICAR SOLICITAÇÃO PENDENTE
 // =====================================================
 
 async function hasPendingRequest(user) {
+  if (!user) {
+    return false;
+  }
 
   try {
 
@@ -196,22 +252,26 @@ async function hasPendingRequest(user) {
 
 
 // =====================================================
-// CRIAR SOLICITAÇÃO
+// CRIAR SOLICITAÇÃO DE CADASTRO
 // =====================================================
 
-async function createPermissionRequest(user) {
+async function createRegistrationRequest(user) {
 
   try {
 
     const request = {
 
-      uid: user.uid,
+      uid:
+        user.uid,
 
       email:
         user.email || null,
 
       displayName:
         user.displayName || null,
+
+      type:
+        'registration',
 
       status:
         'pending',
@@ -230,17 +290,58 @@ async function createPermissionRequest(user) {
     );
 
 
+    console.log(
+      'Solicitação de cadastro criada.'
+    );
+
     return true;
 
   } catch (err) {
 
     console.error(
-      'Erro ao criar solicitação de permissão:',
+      'Erro ao criar solicitação de cadastro:',
       err
     );
 
     return false;
   }
+}
+
+
+// =====================================================
+// CRIAR USUÁRIO NO FIRESTORE
+// =====================================================
+
+async function createUserDocument(user, name, email) {
+
+  await setDoc(
+    doc(
+      db,
+      'users',
+      user.uid
+    ),
+    {
+
+      uid:
+        user.uid,
+
+      email:
+        email,
+
+      displayName:
+        name || null,
+
+      status:
+        'pending',
+
+      createdAt:
+        serverTimestamp()
+    }
+  );
+
+  console.log(
+    'Usuário criado no Firestore com status pending.'
+  );
 }
 
 
@@ -269,6 +370,41 @@ export async function requireDownloadAccess() {
   }
 
 
+  // Primeiro verifica se o cadastro foi aprovado
+  const approved =
+    await isUserApproved(user);
+
+
+  if (!approved) {
+
+    const status =
+      await getUserApprovalStatus(user);
+
+
+    if (status === 'pending') {
+
+      alert(
+        'Seu cadastro ainda está aguardando aprovação do administrador.'
+      );
+
+    } else if (status === 'rejected') {
+
+      alert(
+        'Seu cadastro foi rejeitado pelo administrador.'
+      );
+
+    } else {
+
+      alert(
+        'Seu cadastro ainda não foi aprovado.'
+      );
+    }
+
+    return false;
+  }
+
+
+  // Depois verifica permissão específica de downloads
   const authorized =
     await isDownloadsAuthorized(user);
 
@@ -288,7 +424,7 @@ export async function requireDownloadAccess() {
 
 
   alert(
-    'Você ainda não tem permissão. Solicitação enviada ao administrador.'
+    'Você ainda não tem permissão para baixar arquivos. Sua solicitação foi enviada ao administrador.'
   );
 
 
@@ -307,13 +443,17 @@ export async function requireDownloadAccess() {
 function createMessageElement(form) {
 
   let msgEl =
-    form.querySelector('#form-message');
+    form.querySelector(
+      '#form-message'
+    );
 
 
   if (!msgEl) {
 
     msgEl =
-      document.createElement('div');
+      document.createElement(
+        'div'
+      );
 
     msgEl.className =
       'message';
@@ -380,14 +520,18 @@ if (signupForm) {
 
       const name =
         document
-          .getElementById('signup-name')
+          .getElementById(
+            'signup-name'
+          )
           .value
           .trim();
 
 
       const email =
         document
-          .getElementById('signup-email')
+          .getElementById(
+            'signup-email'
+          )
           .value
           .trim()
           .toLowerCase();
@@ -395,7 +539,9 @@ if (signupForm) {
 
       const password =
         document
-          .getElementById('signup-password')
+          .getElementById(
+            'signup-password'
+          )
           .value;
 
 
@@ -448,48 +594,7 @@ if (signupForm) {
       try {
 
         // -------------------------------------------
-        // VERIFICAR USUÁRIO PRÉ-APROVADO
-        // -------------------------------------------
-
-        console.log(
-          'Verificando aprovação do e-mail:',
-          email
-        );
-
-
-        const approvalDoc =
-          await getDoc(
-            doc(
-              db,
-              'preapproved_users',
-              email
-            )
-          );
-
-
-        console.log(
-          'Documento de aprovação:',
-          approvalDoc.exists()
-        );
-
-
-        if (
-          !approvalDoc.exists() ||
-          approvalDoc.data().status !== 'approved'
-        ) {
-
-          showMessage(
-            msgEl,
-            'Seu cadastro ainda não foi aprovado por um administrador.',
-            false
-          );
-
-          return;
-        }
-
-
-        // -------------------------------------------
-        // CRIAR CONTA NO AUTHENTICATION
+        // CRIAR CONTA
         // -------------------------------------------
 
         console.log(
@@ -505,9 +610,13 @@ if (signupForm) {
           );
 
 
+        const user =
+          userCredential.user;
+
+
         console.log(
           'Usuário criado:',
-          userCredential.user.uid
+          user.uid
         );
 
 
@@ -518,16 +627,17 @@ if (signupForm) {
         if (name) {
 
           await updateProfile(
-            userCredential.user,
+            user,
             {
-              displayName: name
+              displayName:
+                name
             }
           );
         }
 
 
         // -------------------------------------------
-        // SALVAR USUÁRIO NO FIRESTORE
+        // SALVAR USUÁRIO
         // -------------------------------------------
 
         console.log(
@@ -535,30 +645,19 @@ if (signupForm) {
         );
 
 
-        await setDoc(
-          doc(
-            db,
-            'users',
-            userCredential.user.uid
-          ),
-          {
-            uid:
-              userCredential.user.uid,
-
-            email:
-              email,
-
-            displayName:
-              name,
-
-            createdAt:
-              serverTimestamp()
-          }
+        await createUserDocument(
+          user,
+          name,
+          email
         );
 
 
-        console.log(
-          'Usuário salvo no Firestore!'
+        // -------------------------------------------
+        // CRIAR SOLICITAÇÃO
+        // -------------------------------------------
+
+        await createRegistrationRequest(
+          user
         );
 
 
@@ -568,16 +667,31 @@ if (signupForm) {
 
         showMessage(
           msgEl,
-          'Cadastro realizado com sucesso! Redirecionando...',
+          'Cadastro realizado! Sua conta está aguardando aprovação do administrador.',
           true
         );
 
 
+        console.log(
+          'Cadastro aguardando aprovação.'
+        );
+
+
+        // Desloga imediatamente.
+        // O usuário só poderá entrar depois da aprovação.
+        await signOut(auth);
+
+
         setTimeout(
           () => {
-            redirectToIndex();
+
+            window.location.href =
+              getSiteUrl(
+                'pages/login.html'
+              );
+
           },
-          1200
+          1800
         );
 
 
@@ -625,6 +739,14 @@ if (signupForm) {
           mensagem =
             'A senha precisa ter pelo menos 6 caracteres.';
 
+        } else if (
+          err.code ===
+          'auth/network-request-failed'
+        ) {
+
+          mensagem =
+            'Erro de conexão. Verifique sua internet e tente novamente.';
+
         } else if (err.message) {
 
           mensagem =
@@ -665,14 +787,19 @@ if (loginForm) {
 
       const email =
         document
-          .getElementById('login-email')
+          .getElementById(
+            'login-email'
+          )
           .value
-          .trim();
+          .trim()
+          .toLowerCase();
 
 
       const password =
         document
-          .getElementById('login-password')
+          .getElementById(
+            'login-password'
+          )
           .value;
 
 
@@ -684,25 +811,182 @@ if (loginForm) {
 
       try {
 
-        await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
+        console.log(
+          'Tentando fazer login:',
+          email
+        );
+
+
+        const credential =
+          await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+
+
+        const user =
+          credential.user;
+
+
+        console.log(
+          'Login realizado:',
+          user.uid
+        );
+
+
+        // -------------------------------------------
+        // VERIFICAR APROVAÇÃO
+        // -------------------------------------------
+
+        const status =
+          await getUserApprovalStatus(
+            user
+          );
+
+
+        console.log(
+          'Status do cadastro:',
+          status
+        );
+
+
+        // Proprietários não precisam de aprovação
+        if (
+          OWNER_UIDS.includes(
+            user.uid
+          )
+        ) {
+
+          showMessage(
+            msgEl,
+            'Login efetuado. Redirecionando...',
+            true
+          );
+
+          setTimeout(
+            () => {
+              redirectToIndex();
+            },
+            800
+          );
+
+          return;
+        }
+
+
+        // -------------------------------------------
+        // PENDENTE
+        // -------------------------------------------
+
+        if (
+          status ===
+          'pending'
+        ) {
+
+          await signOut(
+            auth
+          );
+
+
+          showMessage(
+            msgEl,
+            'Seu cadastro está aguardando aprovação do administrador.',
+            false
+          );
+
+          return;
+        }
+
+
+        // -------------------------------------------
+        // REJEITADO
+        // -------------------------------------------
+
+        if (
+          status ===
+          'rejected'
+        ) {
+
+          await signOut(
+            auth
+          );
+
+
+          showMessage(
+            msgEl,
+            'Seu cadastro foi rejeitado pelo administrador.',
+            false
+          );
+
+          return;
+        }
+
+
+        // -------------------------------------------
+        // NÃO ENCONTRADO
+        // -------------------------------------------
+
+        if (
+          status ===
+          null
+        ) {
+
+          await signOut(
+            auth
+          );
+
+
+          showMessage(
+            msgEl,
+            'Não foi possível encontrar o cadastro deste usuário no sistema.',
+            false
+          );
+
+          return;
+        }
+
+
+        // -------------------------------------------
+        // APROVADO
+        // -------------------------------------------
+
+        if (
+          status ===
+          'approved'
+        ) {
+
+          showMessage(
+            msgEl,
+            'Login efetuado. Redirecionando...',
+            true
+          );
+
+
+          setTimeout(
+            () => {
+              redirectToIndex();
+            },
+            800
+          );
+
+          return;
+        }
+
+
+        // -------------------------------------------
+        // STATUS DESCONHECIDO
+        // -------------------------------------------
+
+        await signOut(
+          auth
         );
 
 
         showMessage(
           msgEl,
-          'Login efetuado. Redirecionando...',
-          true
-        );
-
-
-        setTimeout(
-          () => {
-            redirectToIndex();
-          },
-          800
+          'Seu cadastro ainda não está liberado.',
+          false
         );
 
 
@@ -714,10 +998,52 @@ if (loginForm) {
         );
 
 
+        let mensagem =
+          'Erro no login.';
+
+
+        if (
+          err.code ===
+          'auth/invalid-credential'
+        ) {
+
+          mensagem =
+            'E-mail ou senha incorretos.';
+
+        } else if (
+          err.code ===
+          'auth/user-not-found'
+        ) {
+
+          mensagem =
+            'Usuário não encontrado.';
+
+        } else if (
+          err.code ===
+          'auth/wrong-password'
+        ) {
+
+          mensagem =
+            'Senha incorreta.';
+
+        } else if (
+          err.code ===
+          'auth/invalid-email'
+        ) {
+
+          mensagem =
+            'O e-mail informado é inválido.';
+
+        } else if (err.message) {
+
+          mensagem =
+            err.message;
+        }
+
+
         showMessage(
           msgEl,
-          err.message ||
-            'Erro no login.',
+          mensagem,
           false
         );
       }
@@ -788,14 +1114,17 @@ function protectDownloadsLink() {
 
 
             if (
-              /^(https?:)?\/\//.test(href) ||
+              /^(https?:)?\/\//.test(
+                href
+              ) ||
               href.startsWith('/')
             ) {
 
               const target =
                 href.startsWith('http')
                   ? href
-                  : window.location.origin + href;
+                  : window.location.origin +
+                    href;
 
 
               window.location.href =
@@ -804,7 +1133,9 @@ function protectDownloadsLink() {
             } else {
 
               window.location.href =
-                getSiteUrl(href);
+                getSiteUrl(
+                  href
+                );
             }
 
 
@@ -843,7 +1174,7 @@ let currentUser =
 
 onAuthStateChanged(
   auth,
-  (user) => {
+  async (user) => {
 
     currentUser =
       user;
@@ -859,6 +1190,56 @@ onAuthStateChanged(
     // -----------------------------------------------
 
     if (user) {
+
+      const status =
+        await getUserApprovalStatus(
+          user
+        );
+
+
+      // Se não for proprietário e não estiver aprovado,
+      // não deve permanecer logado.
+      if (
+        !OWNER_UIDS.includes(
+          user.uid
+        ) &&
+        status !== 'approved'
+      ) {
+
+        console.log(
+          'Usuário sem aprovação:',
+          user.email,
+          status
+        );
+
+
+        await signOut(
+          auth
+        );
+
+
+        authBar.innerHTML = `
+
+          <a
+            href="pages/login.html"
+            class="btn-login"
+          >
+            Login
+          </a>
+
+          <a
+            href="pages/cadastro.html"
+            class="btn-cadastro"
+          >
+            Cadastro
+          </a>
+
+        `;
+
+
+        return;
+      }
+
 
       authBar.innerHTML = `
 
